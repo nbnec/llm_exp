@@ -1,0 +1,87 @@
+---
+openapi: 3.0.2
+info:
+  title: Route4Me Route Destination Status API
+  version: 5.0-oas3
+servers:
+  - url: https://wh.route4me.com/modules/api/v5.0
+  - url: https://wh-staging-yx2ian2bajaskas.route4me.com/modules/api/v5.0
+security:
+  - APIKeyQueryParam: []
+  - BearerAuth: []
+paths:
+  /route-stop-status:
+    post:
+      summary: Insert or update route address status/statuses
+      operationId: set
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/routeStopStatusBody'
+        required: true
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "406":
+          description: Validation Exception.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+components:
+  schemas:
+    Error406:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: false
+        code:
+          type: integer
+          example: 406
+        exit_code:
+          type: integer
+          example: 1
+        messages:
+          type: object
+    routeStopStatusBody:
+      type: object
+      properties:
+        destination_ids:
+          type: array
+          items:
+            type: integer
+        status:
+          type: string
+          enum:
+            - Skipped
+            - Completed
+            - Failed
+            - Empty
+    inline_response_200:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+  responses:
+    InvalidValue:
+      description: Validation Exception.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error406'
+  securitySchemes:
+    APIKeyQueryParam:
+      type: apiKey
+      name: api_key
+      in: query
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

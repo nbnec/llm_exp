@@ -1,0 +1,360 @@
+---
+openapi: 3.0.0
+info:
+  title: Route4Me Route Status API
+  description: Package for Route Statuses.
+  version: "5.0"
+servers:
+  - url: https://virtserver.swaggerhub.com/Route4Me/route-status/5.0
+    description: SwaggerHub API Auto Mocking.
+  - url: https://wh.route4me.com/modules/api/v5.0/route-status
+security:
+  - APIKeyQueryParam: []
+  - BearerAuth: []
+paths:
+  /{routeId}:
+    get:
+      summary: Display current route status
+      description: Get the status by specifying the path parameter ID.
+      parameters:
+        - name: routeId
+          in: path
+          description: Route ID.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseStatus'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+    post:
+      summary: Store a new Status in the database
+      description: |
+        Update the status by specifying the path parameter ID.  
+        Route statuses change only forward - planned > started/paused > completed.
+      parameters:
+        - name: routeId
+          in: path
+          description: Route ID.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/RequestStatus'
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseStatus'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        "406":
+          description: Validation Exception.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+  /{routeId}/history:
+    get:
+      summary: Display route status history
+      description: Get route status history by specifying the path parameter ID.
+      parameters:
+        - name: routeId
+          in: path
+          description: Route ID.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: order_by
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: start
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            description: Unix timestamp in seconds.
+            example: 1640154065
+        - name: end
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            description: Unix timestamp in seconds.
+            example: 1640174065
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryCollection'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+  /{routeId}/rollback:
+    get:
+      summary: Roll back route status
+      description: |
+        Roll back route status by specifying the path parameter ID.  
+        Sometimes a status rollback is possible.
+      parameters:
+        - name: routeId
+          in: path
+          description: Route ID.
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseStatus'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+  /planned:
+    post:
+      summary: Store a new Status in the database
+      description: Store a new Status in the database with planned status.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/planned_body'
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusCollection'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+components:
+  schemas:
+    RequestStatus:
+      required:
+        - status
+      type: object
+      properties:
+        status:
+          type: string
+          example: planned
+          enum:
+            - planned
+            - started
+            - paused
+            - completed
+        lat:
+          type: number
+          example: 40.73061
+        lng:
+          type: number
+          example: -73.935242
+        event_timestamp:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+    Status:
+      type: object
+      properties:
+        route_id:
+          type: string
+          example: 9C6746F1986CEEF5E1AE29BB413724B9
+        status:
+          type: string
+          example: planned
+          enum:
+            - planned
+            - started
+            - paused
+            - completed
+        lat:
+          type: number
+          example: 40.73061
+        lng:
+          type: number
+          example: -73.935242
+        planned_at:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+        started_at:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+        paused_at:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+        completed_at:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+    ResponseStatus:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Status'
+    ResponseHistory:
+      type: object
+      properties:
+        route_status_history_id:
+          type: string
+          example: DE8E436F54FABB54C83D9A1CCF541E3F
+        route_id:
+          type: string
+          example: 58AFD7B344E6988F900AC573F8CA7E3D
+        member_id:
+          type: integer
+        status:
+          type: string
+          example: planned
+          enum:
+            - planned
+            - started
+            - paused
+            - completed
+        lat:
+          type: number
+          example: 40.73061
+        lng:
+          type: number
+          example: -73.935242
+        timestamp:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+        rollback_timestamp:
+          type: integer
+          description: Unix timestamp in seconds.
+          example: 1595257337
+    StatusCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Status'
+    HistoryCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseHistory'
+    Error404:
+      type: object
+      properties:
+        status:
+          type: boolean
+        code:
+          type: integer
+          example: 404
+    Error406:
+      type: object
+      properties:
+        status:
+          type: boolean
+        code:
+          type: integer
+          example: 406
+        exit_code:
+          type: integer
+          description: |
+            1 - Validation error;  
+            2 - Wrong key;  
+            3 - Deletion Denied;  
+            4 - Conflict.
+    planned_body:
+      type: object
+      properties:
+        route_ids:
+          type: array
+          items:
+            type: string
+  responses:
+    NotFound:
+      description: Not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error404'
+    InvalidValue:
+      description: Validation Exception.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error406'
+  parameters:
+    idParam:
+      name: routeId
+      in: path
+      description: Route ID.
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  requestBodies:
+    RequestStatus:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RequestStatus'
+  securitySchemes:
+    APIKeyQueryParam:
+      type: apiKey
+      name: api_key
+      in: query
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

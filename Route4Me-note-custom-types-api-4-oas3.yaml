@@ -1,0 +1,250 @@
+---
+openapi: 3.0.2
+info:
+  title: Route4Me Custom Note Types API v4
+  version: 4.0-oas3
+servers:
+- url: https://api.route4me.com/api.v4
+security:
+- APIKeyQueryParam: []
+- BearerAuth: []
+paths:
+  /note_custom_types.php:
+    get:
+      tags:
+      - Custom Note Types
+      summary: Get the list of all Custom Note Types.
+      description: Get the list of all Custom Note Types..
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseAll'
+    put:
+      tags:
+      - Custom Note Types
+      summary: Update the specified Custom Note Type.
+      description: Update the Custom Note Type by sending the corresponding body payload.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatedData'
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseUpdated'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        "406":
+          description: Validation Exception.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+    post:
+      tags:
+      - Custom Note Types
+      summary: Add a new Custom Note Type entry.
+      description: Add a new Custom Note Type entry by sending the corresponding body payload.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoredData'
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseUpdated'
+        "406":
+          description: Validation Exception.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+    delete:
+      tags:
+      - Custom Note Types
+      summary: Delete the Custom Note Type entry.
+      description: Delete the Custom Note Type entry by sending a body payload with the corresponding Field ID.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/customNoteTypesBody'
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "404":
+          description: Not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        "406":
+          description: Validation Exception.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+components:
+  schemas:
+    StoredData:
+      type: object
+      properties:
+        note_custom_type:
+          type: string
+          description: Note custom type.
+          example: Customer Language
+        note_custom_type_values:
+          type: array
+          items:
+            type: string
+          description: Custom note type values
+          example: |
+            [
+              "English",
+              "French"
+            ]
+
+    UpdatedData:
+      type: object
+      properties:
+        note_custom_type_id:
+          type: number
+          example: 1
+        note_custom_type:
+          type: string
+          description: Note custom type.
+          example: Customer Language
+        note_custom_type_values:
+          type: array
+          items:
+            type: string
+          description: Custom note type values
+          example: |
+            [
+              "English",
+              "French"
+            ]
+
+    ResponseOne:
+      type: object
+      properties:
+        note_custom_type_id:
+          type: number
+          example: 1
+        note_custom_type:
+          type: string
+          description: Note custom type.
+          example: Customer Language
+        root_owner_member_id:
+          type: integer
+          description: Route owner member.
+          example: 444444
+        note_custom_type_values:
+          type: array
+          items:
+            type: string
+          description: Custom note type values
+          example: |
+            [
+              "English",
+              "French"
+            ]
+
+    ResponseAll:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseOne'
+    ResponseUpdated:
+      type: object
+      properties:
+        result:
+          type: string
+          example: OK
+        affected:
+          type: number
+          example: 1
+        data:
+            $ref: '#/components/schemas/ResponseOne'
+    Error404:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: false
+        code:
+          type: integer
+          example: 404
+    Error406:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: false
+        code:
+          type: integer
+          example: 406
+        exit_code:
+          type: integer
+          example: 1
+        messages:
+          type: object
+    customNoteTypesBody:
+      type: object
+      properties:
+        id:
+          type: number
+          description: ID of the custom note field to remove.
+          example: 1
+    inline_response_200:
+      type: object
+      properties:
+        result:
+          type: string
+          example: OK
+        affected:
+          type: number
+          example: 1
+  responses:
+    NotFound:
+      description: Not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error404'
+    InvalidValue:
+      description: Validation Exception.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error406'
+  securitySchemes:
+    APIKeyQueryParam:
+      type: apiKey
+      name: api_key
+      in: query
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

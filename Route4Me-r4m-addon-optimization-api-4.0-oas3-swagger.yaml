@@ -1,0 +1,2337 @@
+---
+openapi: 3.0.2
+info:
+  title: Optimizations
+  description: Manage your Route Optimizations.
+  version: 4.0-oas3
+servers:
+- url: https://api.route4me.com/api.v4
+security:
+- APIKeyQueryParam: []
+paths:
+  /optimization_problem.php:
+    description: Optimization Problem
+    post:
+      summary: Create optimization
+      description: Create a new optimization. 
+      tags:
+      - Optimization Management
+      requestBody:
+        $ref: '#/components/requestBodies/Data'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOptimization'
+        "406":
+          description: Validation Exception
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+    get:
+      summary: Get optimization(s)
+      description: GET one or more optimizations.
+      tags:
+      - Optimization Management
+      parameters:
+      - name: optimization_problem_id
+        in: query
+        description: An optimization's unique ID. Populate this to retrieve only one optimization.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: state
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          title: State
+          type: integer
+          description: |
+            An optimization can be in one of the following states at any given time:  
+            
+            |Value|Description|
+            |-|-|
+            |0|New|
+            |1|Initial|
+            |2|MatrixProcessing|
+            |3|Optimizing|
+            |4|Optimized|
+            |5|Error|
+            |6|ComputingDirections|
+            |7|Cancelled|
+            |8|NoSolution|
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+      - name: limit
+        in: query
+        description: Limit the number of records in the response.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: The number of records to skip in the response, in chronological order.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: start_date
+        in: query
+        description: Retrieve optimizations starting with this date.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        description: Retrieve optimizations ending with this date.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "406":
+          description: Validation Exception
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+    put:
+      summary: Edit optimization
+      description: Edit an Optimization
+      tags:
+      - Optimization Management
+      parameters:
+      - name: optimization_problem_id
+        in: query
+        description: An optimization's unique ID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Data'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOptimization'
+        "406":
+          description: Validation Exception
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+    delete:
+      summary: Delete optimization(s)
+      description: Delete one or more optimization.
+      tags:
+      - Optimization Management
+      requestBody:
+        $ref: '#/components/requestBodies/Remove'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseRemoveOptimization'
+        "406":
+          description: Validation Exception
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error406'
+components:
+  schemas:
+    ResponseOptimizations:
+      description: Contains an array with all the returned Optimizations as objects.
+      type: object
+      properties:
+        optimizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseOptimization'
+        totalRecords:
+          type: integer
+    RequestAddresses:
+      type: array
+      items:
+        $ref: '#/components/schemas/RequestAddresses_inner'
+    RequestParameters:
+      type: object
+      properties:
+        algorithm_type:
+          title: Optimization Algorithm Type
+          type: integer
+          description: |
+            The algorithm to be used in this optimization.
+
+            |Value|Description|
+            |-|-| 
+            |1|A single route without constraints|
+            |3|Multiple routes with constraints and a single depot|
+            |4|Multiple routes with constraints and multiple depots|
+            |8|Multiple routes with constraints and pickup / dropoff pairs|
+            |9|Heterogeneous, multiple routes with constraints with multiple depots|
+            |100|No optimization|
+            |101|Balancing addresses to routes|
+          enum:
+          - 1
+          - 3
+          - 4
+          - 8
+          - 9
+          - 100
+          - 101
+        avoid:
+          title: Tolls and Highways Behavior
+          type: string
+          description: |
+            Avoid/minimize tolls or highways.  
+
+            |Value|Description|
+            |-|-|
+            |Highways|Avoid highways|
+            |Tolls|Avoid tolls|
+            |minimizeHighways|Minimize highways|
+            |minimizeTolls|Minimize tolls|
+          enum:
+          - Highways
+          - Tolls
+          - minimizeHighways
+          - minimizeTolls
+        avoidance_zones:
+          title:  Avoidance Zones
+          type: array
+          description: |
+            Populate this array with IDs of the zones to be factored in and avoided during the optimization. The zones need to be set up beforehand.
+          items:
+            type: string
+        device_type:
+          title: Type of the Device
+          type: string
+          enum:
+          - web
+          - iphone
+          - ipad
+          - android_phone
+          - android_tablet
+          description: The type of the device originating this request.
+        disable_optimization:
+          title: Turn Optimization Off
+          type: boolean
+          description: If set to `true`, the route optimization engine will not rearrange the stops, and the route will contain adresses in the order that they were passed to the API in. 
+        lock_last:
+          title: Lock the Last Address
+          type: boolean
+          description: If set to `true`, the last address of the route will be locked to the adress that was the last in the request that created the optimization.
+        metric:
+          title: Distance Measurement
+          type: integer
+          enum:
+          - 1
+          - 4
+          description: |
+            Type of distance measurement.  
+
+            |Value|Description|
+            |-|-|
+            |1|Euclidean|
+            |4|Matrix (default)|
+        optimize:
+          title: Optimize For
+          type: string
+          enum:
+          - Distance
+          - Time
+          - timeWithTraffic
+          description: |
+            Set whether route and the driving directions will be generated to minimize distance, time, or time with traffic.  
+            This has no impact on the sequence of stops.
+        route_name:
+          title: Route Name
+          type: string
+          description: |
+            The name of this route. It will be accessible in the search API, and also will be displayed on the mobile device of a user.  
+            Maximum length is 120 characters.
+        route_date:
+          title: Route Date
+          type: integer
+          description: |
+            The midnight of the route start date in UTC in the Unix timestamp format.  
+            Used to display route start time to users, as well as for reporting and analytics.
+        route_time:
+          title: Route Time
+          type: integer
+          description: Seconds in the Unix timestamp format from midnight (UTC) of the day of the route start to the minute the route starts (also UTC).
+        rt:
+          title: Round Trip
+          type: boolean
+          description: |
+            The tour type of this route.  
+            Set to `true` for roundtrip routes.
+        travel_mode:
+          title: Travel Mode
+          type: string
+          description: The travel mode to optimize the route for.
+          enum:
+          - Driving
+          - Walking
+          - Trucking
+          - Bicycling
+        vehicle_capacity:
+          title: Vehicle Capacity
+          type: integer
+          description: The maximum amount of cargo a vehicle can carry in units (boxes, crates, etc).
+        vehicle_max_cargo_weight:
+          title: Maximum Cargo Weight for the Vehicle
+          type: number
+          description: Maximum cargo weight of a vehicle.
+        vehicle_max_cargo_volume:
+          title: Vehicle Maximum Cargo Volume
+          type: number
+          description: Maximum cargo volume of a vehicle.
+        vehicle_max_distance_mi:
+          title: Vehicle Maximum Distance (mi)
+          type: number
+          description: Maximum distance for a single vehicle in this route in miles.
+        subtour_max_revenue:
+          title: Subtour Max Revenue
+          type: number
+          description: Maximum allowed revenue for a subtour.
+        vehicle_id:
+          title: Vehicle ID
+          type: string
+          description: The unique internal id of the vehicle to assign to the route.
+        route_max_duration:
+          title: Route Maximum Duration
+          type: number
+          default: 86399
+          description: |
+            Maximum duration of a route in seconds.
+            24 hours (86399) by default.
+        target_duration:
+          title: Target Duration
+          type: number
+          description: Target route duration for optimization fine-tuning.
+        target_distance:
+          title: Target Distance
+          type: number
+          description: Target route distance for optimization fine-tuning.
+        target_wait_by_tail_size:
+          title: Target Wait By Tail Size
+          type: number
+          description: Target route tail size (the amount of stops after a wait) for optimization fine-tuning.
+        advanced_constraint:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdvancedConstraint'
+    AdvancedConstraint:
+      title: Advanced Constraints for the Optimization
+      type: object
+      description: Use Advanced constraints to fine-tune subroute formation (e.g. by limiting the amount of Route4Me users (drivers)).
+      properties:
+        available_time_windows:
+          title: Time Window Constraints
+          type: array
+          description: An array of time windows, no more than two.
+          items:
+            type: array
+            description: A time window represented by its' start and end timestamps.
+            items:
+              type: integer
+        route4me_members_id:
+          type: array
+          description: An array of the available member (driver) IDs.
+          items:
+            type: integer
+        members_count:
+          type: integer
+          description: Number of availabale members (drivers).
+        vehicles_id:
+          type: array
+          description: An array of the available vehicle IDs.
+          items:
+            type: string
+        max_capacity:
+          type: integer
+          description: The maximum amount of cargo a vehicle can carry in units (boxes, crates, etc).
+        max_cargo_weight:
+          type: integer
+          description: Maximum cargo weight a vehicle can cary.
+        max_cargo_volume:
+          type: integer
+          description: Vehicle Maximum Cargo Volume.
+        max_revenue:
+          type: integer
+          description: Maximum allowed revenue from a subtour.
+        tags:
+          type: array
+          description: An array of tags for this optimization (driver skills, for example).
+          items:
+            type: string
+        location_sequence_pattern:
+          description: |
+            Use this  parameter to set the sequence of stops in a route.  
+            An empty value ("") means any stops, one or more. For example ["", Location1, Location2, "", Location3] will mean any sequence of stops before Location1, then Location2, any sequence again, and then Location3.  
+            Each location is defined by an object containing a location alias, its' address, and its' latitude/longitude pair.
+          type: array
+          items:
+            allOf:
+            - type: object
+              properties:
+                alias:
+                  type: string
+                  description: Location alias.
+                address:
+                  type: string
+                  description: Location address.
+                lat:
+                  type: number
+                  format: float
+                  maximum: 90
+                  minimum: -90
+                  description: Location latitude.
+                lng:
+                  type: number
+                  format: float
+                  maximum: 180
+                  minimum: -180
+                  description: Location longitude.
+        depot_address:
+          $ref: '#/components/schemas/AdvancedConstraint_depot_address'
+    ResponseOptimization:
+      description: Contains the returned Optimization.
+      type: object
+      properties:
+        optimization_problem_id:
+          description: An optimization's unique ID        
+          type: string
+        user_errors:
+          description: Contains the error messages pertaining to the user(s).
+          title: User Errors
+          type: array
+          items:
+            type: string
+        optimization_errors:
+          description: Contains the error messages pertaining to the system and it's solving the optimization problem(s).
+          title: Optimization Errors
+          type: array
+          items:
+            type: string
+        state:
+          title: Optimization State
+          type: integer
+          description: |
+            An optimization can be in one of the following states at any given time:  
+
+            |Value|Description|
+            |-|-|
+            |0|New|
+            |1|Initial|
+            |2|MatrixProcessing|
+            |3|Optimizing|
+            |4|Optimized|
+            |5|Error|
+            |6|ComputingDirections|
+            |7|Cancelled|
+            |8|NoSolution|
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+        created_timestamp:
+          title: Optimization Created Time
+          type: integer
+          description: The Unix timestamp of the moment this optimization was created, UTC.
+        scheduled_for:
+          title: Optimization Scheduled for Time
+          type: integer
+          description: The Unix timestamp of the moment this optimization is scheduled for, UTC.
+        optimization_completed_timestamp:
+          title: Optimization Scheduled for Time
+          type: integer
+          description: The Unix timestamp of the moment this optimization was completed, UTC.
+        parameters:
+          $ref: '#/components/schemas/RouteParameters'
+        sent_to_background:
+          type: boolean
+          description: If true, the solution was not returned and the optimization is being computed in the background.
+        addresses:
+          title: Route Addresses
+          type: array
+          description: The addresses this optimization includes.
+          items:
+            $ref: '#/components/schemas/Address'
+        routes:
+          title: The route(s) this optimization includes.
+          type: array
+          items:
+            $ref: '#/components/schemas/DataObjectRoute'
+        links:
+          title: Optimization Links
+          type: array
+          items:
+            $ref: '#/components/schemas/Links'
+          description: Links to the GET operations for the optimization problem.
+    ResponseRemoveOptimization:
+      title: Response to Remove Optimization
+      type: object
+      properties:
+        status:
+          title: Request Status
+          type: boolean
+          description: If true, an optimization was successfully removed from the database.
+        removed:
+          title: Removed Optimizations Amount
+          type: integer
+          description: How many optimizations were successfully removed
+    Error404:
+      title: '404'
+      type: object
+      properties:
+        status:
+          type: boolean
+        code:
+          type: integer
+          example: 404
+    Error406:
+      title: '406'
+      type: object
+      properties:
+        status:
+          type: boolean
+        code:
+          type: integer
+          example: 406
+    RouteParameters:
+      title: Route Parameters
+      type: object
+      properties:
+        is_upload:
+          title: Is Upload
+          type: boolean
+          description: Lets the R4M API know if this request originates from a file upload within your environment for analytical purposes.
+          nullable: true
+        rt:
+          title: Round Trip
+          type: boolean
+          description: |
+            The tour type of this route.  
+            `true` for roundtrip routes.
+          nullable: true
+        disable_optimization:
+          title: Disable Optimization
+          type: boolean
+          description: If set to `true`, the route optimization engine will not rearrange the stops, and the route will contain adresses in the order that they were passed to the API in.
+          nullable: true
+        route_name:
+          title: Route Name
+          type: string
+          description: The name of this route. It will be accessible in the search API and will be displayed on the mobile device of a user. Maximum length is 120 characters.
+          nullable: true
+        route_date:
+          title: Route Start Date
+          type: integer
+          description: |
+            The midnight of the route start date in UTC in the Unix timestamp format.  
+            Used to display route start time to users, as well as for reporting and analytics.
+          nullable: true
+        route_time:
+          title: Route Start Time
+          type: integer
+          description: Seconds in the Unix timestamp format from midnight (UTC) of the day of the route start to the minute the route starts (also UTC). 7am by default.
+          default: 25200
+        shared_publicly:
+          title: Publicly Available
+          type: string
+          description: If `true`, the route can be viewed by unauthenticated users.
+          nullable: true
+          deprecated: true
+        optimize:
+          title: Optimize
+          type: string
+          description: |
+            The bias the route was optimized for.  
+            This has no impact on stop sequence in the route.
+          nullable: true
+          enum:
+          - Distance
+          - Time
+          - timeWithTraffic
+        lock_last:
+          title: Lock Last Address
+          type: boolean
+          description: If `true`, the last stop in the route is fixed.
+          nullable: true
+        vehicle_capacity:
+          title: 'Vehicle Maximum Cargo: Units'
+          type: number
+          description: The maximum amount of cargo a vehicle can carry in units (boxes, crates, etc).
+          nullable: true
+        vehicle_max_cargo_weight:
+          title: 'Vehicle Maximum Cargo: Weight'
+          type: number
+          description: Maximum cargo weight a vehicle can cary.
+          nullable: true
+        vehicle_max_cargo_volume:
+          title: 'Vehicle Maximum Cargo: Volume'
+          type: number
+          description: Maximum cargo volume a vehicle can cary.
+          nullable: true
+        vehicle_max_distance_mi:
+          title: Vehicle Maximum Distance
+          type: number
+          description: Maximum distance for a single vehicle in this route (always in miles).
+          nullable: true
+        subtour_max_revenue:
+          title: Subtour Max Revenue
+          type: number
+          description: Maximum allowed revenue for a subtour.
+          nullable: true
+        distance_unit:
+          title: Distance Unit
+          type: string
+          description: The distance measurement unit for the route.
+          enum:
+          - mi
+          - km
+        travel_mode:
+          title: Travel Mode
+          type: string
+          description: The travel mode this route is optimized for.
+          enum:
+          - Driving
+          - Walking
+          - Trucking
+          - Bicycling
+        avoid:
+          title: Avoid
+          type: string
+          description: |
+            Indicates whether this route was optimized to avoid or minimize tolls or highways.  
+            This has no impact on route sequencing.
+          enum:
+          - Highways
+          - Tolls
+          - minimizeHighways
+          - minimizeTolls
+          - ""
+        avoidance_zones:
+          title: Avoidance Zones
+          type: array
+          description: Array of the Avoidance Zone IDs.
+          items:
+            type: string
+        vehicle_id:
+          title: Vehicle ID
+          type: string
+          description: The unique internal id of the vehicle assigned to this route.
+          nullable: true
+        driver_id:
+          title: Driver ID
+          type: string
+          description: The unique internal id of the driver assigned to this route.
+          nullable: true
+        dev_lat:
+          title: Device Latitude
+          type: number
+          maximum: 90
+          minimum: -90
+          description: The latitude of the location of the device at the moment made the request to create the route.
+          nullable: true
+        dev_lng:
+          title: Device Longitude
+          type: number
+          maximum: 180
+          minimum: -180
+          description: The longitude of the location of the device at the moment made the request to create the route.
+          nullable: true
+        route_max_duration:
+          title: Maximum Route Duration
+          type: integer
+          description: Maximum route duration in seconds. 24 hours (86399) by default.
+          default: 86399
+        target_duration:
+          title: Target Duration
+          type: number
+          description: Target route duration for optimizations fine-tuned for route duration.
+          format: double
+        target_distance:
+          title: Target Distance
+          type: number
+          description: Target route distance for optimizations fine-tuned for route distance.
+          format: double
+        target_wait_by_tail_size:
+          title: Target Tail Size
+          type: number
+          description: Target tail size for optimizations fine-tuned for tail size.
+          format: double
+        route_email:
+          title: Route Shared
+          type: string
+          description: Email addresses this route was shared with after completion.
+          format: email
+          nullable: true
+        store_route:
+          title: Store Route
+          type: boolean
+          description: Indicates whether this route us stored. Always true.
+          nullable: true
+        metric:
+          title: Distance Measurement
+          type: integer
+          enum:
+          - 1
+          - 4
+          description: |
+            Type of distance measurement.  
+            1 = Euclidean,  
+            4 = Matrix (default)
+        algorithm_type:
+          title: Optimization Algorithm Type
+          type: integer
+          description: |
+            The algorithm to be used in this optimization.
+            
+            |Value|Description|
+            |-|-|
+            |1|A single route without constraints|
+            |3|Multiple routes with constraints and a single depot|
+            |4|Multiple routes with constraints and multiple depots|
+            |8|Multiple routes with constraints and pickup / dropoff pairs|
+            |9|Heterogeneous, multiple routes with constraints with multiple depots|
+            |100|No optimization|
+            |101|Balancing addresses to routes|
+          enum:
+          - 1
+          - 3
+          - 4
+          - 8
+          - 9
+          - 100
+          - 101
+        member_id:
+          title: Member ID
+          type: string
+          description: ID of the user assigned to the route.
+          nullable: true
+        ip:
+          title: IP
+          type: integer
+          description: IP Address of the user that created the route in decimal format.
+          nullable: true
+        parts:
+          title: Parts
+          type: integer
+          description: The maximum number of routes in optimization.
+          nullable: true
+        device_id:
+          title: Device ID
+          type: string
+          description: ID of the device that was used to create this route. 32 Character MD5 String.
+          nullable: true
+        device_type:
+          title: Device Type
+          type: string
+          description: The type of the device that was used to create this route.
+          enum:
+          - web
+          - iphone
+          - ipad
+          - android_phone
+          - android_tablet
+        first_drive_then_wait_between_stops:
+          title: First Drive Then Wait
+          type: boolean
+          description: If this parameter is set to `true`, the route will be constructed so that the wait times occur at the locations that require the wait and not at the previous ones.
+        truck_weight:
+          title: Truck Weight
+          type: number
+          description: If `travel_mode` = `Trucking`, this parameter specifies the total weight of the truck in tons and is required.
+          nullable: true
+        has_trailer:
+          title: Has Trailer
+          type: boolean
+          description: The vehicle has a trailer if true.
+          default: false
+        trailer_weight_t:
+          title: Trailer Weight
+          type: number
+          description: If `has_trailer` = `true`, this parameter specifies the weight of the trailer in tons and is required.
+          nullable: true
+        limited_weight_t:
+          title: Limited Weight (t)
+          type: number
+          description: If `travel_mode` = `Trucking`, specifies the truck weight in tons and is required.
+          nullable: true
+        weight_per_axle_t:
+          title: Weight per Axle (t)
+          type: number
+          description: If `travel_mode` = `Trucking`, specifies the weight per axle in tons and is required..
+          nullable: true
+        truck_height:
+          title: Truck Height
+          type: number
+          description: If `travel_mode` = `Trucking`, specifies the truck height in units defined by the `truck_dim_unit` parameter and is required.
+          nullable: true
+        truck_width:
+          title: Truck Width
+          type: number
+          description: If `travel_mode` = `Trucking`, specifies the truck width in units defined by the `truck_dim_unit` parameter and is required.
+          nullable: true
+        truck_length:
+          title: Truck Length
+          type: number
+          description: If `travel_mode` = `Trucking`, specifies the truck length in units defined by the `truck_dim_unit` parameter and is required.
+          nullable: true
+        truck_hazardous_goods:
+          title: Hazardous Goods
+          type: string
+          description: A comma-delimited list of the hazardous goods transported by the truck.
+        truck_axles:
+          title: Truck Axles
+          type: integer
+          description: Number of axles of the truck.
+          nullable: true
+        truck_toll_road_usage:
+          title: Truck Toll Road Usage
+          type: string
+          description: Defines whether the truck can use toll roads.
+          nullable: true
+          enum:
+          - "YES"
+          - "NO"
+        truck_avoid_ferries:
+          title: Truck Avoid Ferries
+          type: string
+          description: Defines whether the truck has to avoid ferries.
+          nullable: true
+          enum:
+          - "YES"
+          - "NO"
+        truck_hwy_only:
+          title: Truck Highway Only
+          type: string
+          description: Defines whether the truck can use highways only.
+          nullable: true
+          enum:
+          - "YES"
+          - "NO"
+        truck_lcv:
+          title: Truck LCV
+          type: string
+          description: Defines whether the truck is a Long Combination Vehicle.
+          nullable: true
+          enum:
+          - "YES"
+          - "NO"
+        truck_borders:
+          title: Truck Borders
+          type: string
+          description: Defines whether the truck has to avoid international borders.
+          nullable: true
+          enum:
+          - "YES"
+          - "NO"
+        truck_config:
+          title: Truck Config
+          type: string
+          description: Truck configuration.
+          nullable: true
+          enum:
+          - NONE
+          - PASSENGER
+          - 28_DOUBLETRAILER
+          - 48_STRAIGHT_TRUCK
+          - 48_SEMI_TRAILER
+          - 53_SEMI_TRAILER
+          - FULLSIZEVAN
+          - 26_STRAIGHT_TRUCK
+          deprecated: true
+        truck_dim_unit:
+          title: Truck Dimension Unit
+          type: string
+          description: 'Truck dimensions measurement units: miles or kilometers.'
+          enum:
+          - mi
+          - km
+        truck_type:
+          title: Truck Type
+          type: string
+          description: |
+            Truck type. Can be one of the following:
+            * SUV  
+            * Pickup Truck  
+            * Van  
+            * Eighteen-wheeler  
+            * Cabin  
+            * Waste Disposal Truck  
+            * Tree Cutting Truck  
+            * Big Rig  
+            * Cement Mixer  
+            * Livestock Carrier  
+            * Dairy Truck  
+            * Tractor Trailer  
+          enum:
+          - suv
+          - pickup_truck
+          - van
+          - 18wheeler
+          - cabin
+          - waste_disposal
+          - tree_cutting
+          - bigrig
+          - cement_mixer
+          - livestock_carrier
+          - dairy
+          - tractor_trailer
+        min_tour_size:
+          title: Minimum Tour Size
+          type: integer
+          description: |
+            The minimum number of stops allowed in a subtour.  
+            Must be > 0; `null` means there is no minimum.
+          nullable: true
+        max_tour_size:
+          title: Maximum Tour Size
+          type: integer
+          description: |
+            The maximum number of stops allowed in a subtour.  
+            Must be > 0; `null` means there is no maximum.
+          nullable: true
+        leftturn:
+          title: leftturn
+          type: integer
+          description: |
+            Available with:  
+            1 - Left turn allowed,  
+            2 - Left turn forbidden.
+          nullable: true
+        rightturn:
+          title: rightturn
+          type: integer
+          description: |
+            Available with:  
+            1 - Right turn allowed,  
+            2 - Right turn forbidden.
+          nullable: true
+        route_time_multiplier:
+          title: Route Time Multiplier
+          type: number
+          description: Travel time slowdowon in percentage points. This parameter is stored only if provided in the `slowdowns/travel_time` parameter, but it is processed both if provided here and in the `slowdowns` object.
+          nullable: true
+        route_service_time_multiplier:
+          title: Route Service Time Multiplier
+          type: number
+          description: Service time slowdowon in percentage points. This parameter is stored only if provided in the `slowdowns/service_time` parameter, but it is processed both if provided here and in the `slowdowns` object.
+          nullable: true
+        ignore_tw:
+          title: Ignore Time Windows
+          type: boolean
+          description: If `true`, the time windows of addresses are ignored when building routes.
+        override_addresses:
+          $ref: '#/components/schemas/OverrideAddresses'
+        slowdowns:
+          $ref: '#/components/schemas/Slowdowns'
+        is_dynamic_start_time:
+          title: Dynamic Start Time
+          type: boolean
+          description: If `true`, the start time is dynamic.
+        bundling:
+          $ref: '#/components/schemas/Address_bundling'
+        advanced_constraints:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdvancedConstraints'
+    Address_bundling:
+      title: Address Bundling
+      type: object
+      properties:
+        mode:
+          title: Mode
+          type: integer
+          description: |
+            Defines the parameter to bundle addresses by.  
+            Addresses with matching values in these fields will be bundled together.
+
+            |Value|Description|
+            |-|-|
+            |1|Address|
+            |2|Coordinates|
+            |3|Address field(s)|
+            |4|Address custom field(s)|
+          enum:
+          - 1
+          - 2
+          - 3
+          - 4
+        mode_params:
+          title: Mode Parameters
+          type: array
+          description: |
+            Mode Parameters:  
+            If `mode` = 3, this field should contain the names of fields belonging to the `address` object to be bundled by. Bundle by all if more than one specified.  
+            If `mode` = 4, this field should contain the names of custom fields belonging to the `address` object to be bundled by. Bundle by all if more than one specified. 
+          items:
+            type: string
+        merge_mode:
+          title: Merge Mode
+          type: integer
+          description: |
+            1 - Keep as separate destinations,  
+            2 - Merge into single destination
+          enum:
+          - 1
+          - 2
+        service_time_rules:
+          $ref: '#/components/schemas/ServiceTimeRules'
+    Address:
+      description: 'Response JSON schema for the Address class. See curl examples: `get_route_directions`, `get_route_path_points`'
+      title: Address
+      type: object
+      properties:
+        route_destination_id:
+          title: Route Destination ID
+          type: integer
+          description: Internal unique identifier of this address.
+        alias:
+          title: Address Alias
+          type: string
+          description: Address Alias.
+        member_id:
+          title: Member ID
+          type: integer
+          description: Unique ID of the member assigned to this address.
+        address:
+          title: Address Name
+          type: string
+          description: The address of the stop.
+        is_depot:
+          title: Is Depot
+          type: boolean
+          description: '`true` if this address is a depot.'
+          default: false
+        timeframe_violation_state:
+          title: Timeframe violation state
+          type: integer
+          description: State of the timeframe violation. In response only.
+        timeframe_violation_time:
+          title: Timeframe violation time
+          type: integer
+          description: Timestamp of the timeframe violation. In response only.
+        timeframe_violation_rate:
+          title: Timeframe violation rate
+          type: number
+          description: Rate of the timeframe violation. In a response only.
+        lat:
+          title: Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude of this address.
+        lng:
+          title: Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude of this address.
+        curbside_lat:
+          title: Curbside Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Curbside latitude of this address.
+        curbside_lng:
+          title: Curbside Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Curbside longitude of this address.
+        priority:
+          title: Priority
+          type: integer
+          description: |
+            Priority of this address.
+            0 is the highest priority;  
+            N priority is higher than n + 1.
+          nullable: true
+        route_id:
+          title: Route ID
+          type: string
+          description: Parent route
+        original_route_id:
+          title: Original Route ID
+          type: string
+          description: The original customer-specific route ID assigned at route creation.
+          nullable: true
+        route_name:
+          title: Route Name
+          type: string
+          description: The name of the route.
+          nullable: true
+        optimization_problem_id:
+          title: Optimization Problem ID
+          type: string
+          description: Unique ID of the Optimization this address belongs to.
+        sequence_no:
+          title: Sequence No
+          type: integer
+          description: The number of this address in the bundle.
+        geocoded:
+          title: Geocoded
+          type: boolean
+          description: '`true` if this `address` field was successfully geocoded.'
+        preferred_geocoding:
+          title: Preferred Geocoding
+          type: integer
+          description: Index of `geocodings` array that the user has chosen
+          nullable: true
+        failed_geocoding:
+          title: Failed Geocoding
+          type: boolean
+          description: |
+            `true` if there was a failed geocoding attempt.  
+            `false` if geocoding successful or no geocoding.
+          nullable: true
+        geocodings:
+          title: Geocodings ID
+          type: array
+          items:
+            $ref: '#/components/schemas/geocoding'
+        contact_id:
+          title: Contact ID
+          minimum: 0
+          type: integer
+          description: The ID of the corresponding record in the Address (0 if not connected to the address book).
+          nullable: true
+        order_id:
+          title: Order ID
+          type: integer
+          description: Parent order ID.
+          nullable: true
+        address_stop_type:
+          title: Address stop type
+          type: string
+          description: |
+            The type of stop that this is.  
+            Can be DELIVERY, PICKUP, BREAK, MEETUP, SERVICE, VISIT, or DRIVEBY.
+          enum:
+          - DELIVERY
+          - PICKUP
+          - BREAK
+          - MEETUP
+          - SERVICE
+          - VISIT
+          - DRIVEBY
+        is_visited:
+          title: Is Visited
+          type: boolean
+          description: '`true` if the driver pressed the "Visited" button.'
+          default: false
+        timestamp_last_visited:
+          title: Last Visited Timestamp
+          type: integer
+          description: Timestamp of the moment driver pressed the "Visited" button.
+          nullable: true
+        visited_lat:
+          title: Visited Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Last known check-in latitude.
+          nullable: true
+        visited_lng:
+          title: Visited Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Last known check-in longitude.
+          nullable: true
+        is_departed:
+          title: Is Departed
+          type: boolean
+          description: '`true` id the driver pressed the "Departed" button.'
+        departed_lat:
+          title: Departed Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Last known departed latitude.
+          nullable: true
+        departed_lng:
+          title: Departed Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Last known departed longitude.
+          nullable: true
+        timestamp_last_departed:
+          title: Timestamp Last Departed
+          type: integer
+          description: Timestamp of the moment driver pressed the "Departed" button.
+          nullable: true
+        group:
+          title: Group
+          type: string
+          description: The group this address belongs to.
+          nullable: true
+        customer_po:
+          title: Customer PO
+          type: string
+          description: The ID of the customer's Purchase Order of the address.
+          nullable: true
+        invoice_no:
+          title: Invoice No
+          type: string
+          description: The invoice number of the address.
+          nullable: true
+        reference_no:
+          title: Reference No
+          type: string
+          description: The reference number of the address.
+          nullable: true
+        order_no:
+          title: Order NO
+          type: string
+          description: The number of the order for this address.
+          nullable: true
+        weight:
+          title: Weight
+          type: number
+          description: Weight of the delivery for this address.
+        cost:
+          title: Cost
+          type: number
+          description: The cost of the order for the address.
+        revenue:
+          title: Revenue
+          type: number
+          description: The total revenue for the address.
+        cube:
+          title: Cube
+          type: number
+          description: The cubic volume of the cargo being delivered or picked up at the address.
+        pieces:
+          title: Pieces
+          type: integer
+          description: The amount of pieces of cargo being delivered or picked up at the address.
+        first_name:
+          title: First name
+          type: string
+          description: The first name of the person receiving the order at this address.
+          nullable: true
+        last_name:
+          title: Last name
+          type: string
+          description: The last name of the person receiving the order at this address.
+          nullable: true
+        email:
+          title: Email
+          type: string
+          description: A valid e-mail address assigned to this stop.
+          format: email
+          nullable: true
+        phone:
+          title: Phone
+          type: string
+          description: The contact number of the person receiving the order at this address..
+          nullable: true
+        destination_note_count:
+          title: Destination Note Count
+          type: integer
+          description: The total number of notes added to this destination.
+        drive_time_to_next_destination:
+          title: Time to next Destination
+          type: integer
+          description: Driving time to the next destination in seconds.
+        abnormal_traffic_time_to_next_destination:
+          deprecated: true
+          title: Was used for abnormal traffic time to next destination; always `null`
+          type: integer
+          description: Abnormal traffic time to next destination.
+          nullable: true
+        uncongested_time_to_next_destination:
+          deprecated: true
+          title: Uncongested Time To Next Destination
+          type: integer
+          description: Driving time to the next destination in seconds assuming there is zero traffic.
+          nullable: true
+        traffic_time_to_next_destination:
+          title: Traffic Time To Next Destination
+          type: integer
+          description: Driving time to the next destination in seconds with traffic. `null` if the optimization doesn't account for traffic.
+          nullable: true
+        distance_to_next_destination:
+          title: Distance to next destination
+          type: number
+          description: Distance to the next destination in route units (miles or kilometers, miles by default).
+        udu_distance_to_next_destination:
+          title: UDU Distance To Next Destination
+          type: number
+          description: Distance to next destination in User Defined Units (miles by default).
+        channel_name:
+          deprecated: true
+          title: Channel name
+          type: string
+          description: Channel name.
+        pickup:
+          title: Pickup
+          type: string
+          description: Alias of a pickup point. Used for matching the pickup-dropoff pairs.
+        dropoff:
+          title: Dropoff
+          type: string
+          description: Alias of the paired dropoff point.  Used for matching the pickup-dropoff pairs.
+        joint:
+          title: Joint
+          type: integer
+          description: If equal to 1, the pickup and dropoff addresses are joined, which means the dropoff point will directly follow the pickup point in the route (instead of "pickup", "stopA", "stopB", ..., "dropoff").
+        generated_time_window_start:
+          deprecated: true
+          title: Generated Time Window Start
+          type: integer
+          description: Generated Time Window start in seconds.
+          nullable: true
+        generated_time_window_end:
+          title: Generated Time Window End
+          deprecated: true
+          type: integer
+          description: Generated Time Window end in seconds.
+          nullable: true
+        time_window_start:
+          title: Time Window Start
+          type: integer
+          description: |
+            Time Window Start in seconds, relative to the route start date (midnight), UTC time zone.  
+            Relative to the Start Date because otherwise, start time changes would shift time windows.
+          nullable: true
+        time_window_end:
+          title: Time Window End
+          type: integer
+          description: |
+            Time Window End in seconds, relative to the route start date (midnight), UTC time zone.  
+            It is relative to start date because otherwise, start time changes would shift time windows.
+          nullable: true
+        time_window_start_2:
+          title: Time Window Start 2
+          type: integer
+          description: Second time window start.
+          nullable: true
+        time_window_end_2:
+          title: Time Window End 2
+          type: integer
+          description: Second time window end.
+          nullable: true
+        geofence_detected_visited_timestamp:
+          title: Geofence detected visited timestamp
+          type: integer
+          description: Timestamp of the moment the vehicle entered the geofenced zone.
+          nullable: true
+        geofence_detected_departed_timestamp:
+          title: Geofence detected departed timestamp
+          type: integer
+          description: Timestamp of the moment the vehicle departed the geofenced zone.
+          nullable: true
+        geofence_detected_service_time:
+          title: Geofence detected service time
+          type: integer
+          description: The time the vehicle spent inside the geofenced zone.
+          nullable: true
+        geofence_detected_visited_lat:
+          title: Geofence detected visited lat
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude of the detected geofence entry point.
+          nullable: true
+        geofence_detected_visited_lng:
+          title: Geofence detected visited lng
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude of the detected geofence entry point.
+          nullable: true
+        geofence_detected_departed_lat:
+          title: Geofence detected departed lat
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude of the detected geofence exit point.
+          nullable: true
+        geofence_detected_departed_lng:
+          title: Geofence detected departed lng
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude of the detected geofence exit point.
+          nullable: true
+        time:
+          title: Time
+          type: integer
+          description: Service time in seconds.
+        tracking_number:
+          title: Tracking Number
+          type: string
+          description: A unique systemwide code that allows end-users (recipients) to track the status of their order.
+        custom_fields:
+          title: Custom Fields
+          type: object
+          additionalProperties:
+            type: string
+          description: Any unrecognized fields from the original CSV upload will be found here.
+        custom_fields_str_json:
+          title: Custom fields JSON
+          type: string
+          description: A JSON string representation of the custom fields.
+        custom_fields_config:
+          title: Custom fields configuration
+          type: object
+          additionalProperties:
+            type: string
+          description: Configuration of the custom fields.
+          nullable: true
+        custom_fields_config_str_json:
+          title: Custom fields config JSON string
+          type: string
+          description: A JSON string representation of the custom fields configuration.
+          nullable: true
+        notes:
+          title: Notes
+          type: array
+          description: Notes
+          items:
+            $ref: '#/components/schemas/note'
+        bundle_count:
+          title: Bundle Count
+          type: integer
+          description: Total number of the bundled addresses.
+        bundle_items:
+          $ref: '#/components/schemas/BundleItems'
+        order_inventory:
+          description: Inventory of the orders tied to this address.
+          type: array
+          items:
+            $ref: '#/components/schemas/Address_order_inventory'
+        path_to_next:
+          type: array
+          description: Path to the next address as an array of turns.
+          items:
+            $ref: '#/components/schemas/Address_path_to_next'
+        required_skills:
+          title: Required Skills
+          type: array
+          description: Driver skills required for this address.
+          items:
+            type: string
+        additional_status:
+          title: Additional Status
+          type: string
+          description: Additional Status of the address.
+          nullable: true
+        wait_time_to_next_destination:
+          title: Wait time to next destination
+          type: integer
+          description: Wait time to next destination.
+        manifest:
+          $ref: '#/components/schemas/Manifest'
+    geocoding:
+      title: Geocoding
+      required:
+      - bbox
+      - lat
+      - lng
+      type: object
+      properties:
+        key:
+          title: Key
+          type: string
+          description: The unique ID of the geocoding.
+        name:
+          title: Name
+          type: string
+          description: Specific description of the geocoding result.
+        bbox:
+          title: Bbox
+          type: array
+          description: Boundary box
+          items:
+            $ref: '#/components/schemas/geocoding_bbox'
+        lat:
+          title: Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude
+        lng:
+          title: Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude
+        confidence:
+          title: Confidence
+          type: string
+          description: Confidence ("high", "medium", "low").
+        type:
+          title: Type
+          type: string
+          description: Non-standardized. Displayed as tooltips ("Street", "City" etc).
+        postalCode:
+          title: Postal Code
+          type: string
+          description: If the result has a postal code, it will be returned here.
+        countryRegion:
+          title: Country Region
+          type: string
+          description: If the region is known, it will be returned here.
+        curbside_coordinates:
+          title: Curbside Coordinates
+          type: array
+          description: Curbside Coordinates.
+          items:
+            $ref: '#/components/schemas/geocoding_curbside_coordinates'
+        address_without_number:
+          title: Address Without Number
+          type: string
+          description: Address without number.
+        place_id:
+          title: Place ID
+          type: string
+          description: Address place ID.
+    note:
+      title: Note
+      type: object
+      properties:
+        note_id:
+          title: Note ID
+          type: integer
+          description: the id of the note in the system.
+        route_id:
+          title: Route ID
+          type: string
+          description: Route ID.
+        route_destination_id:
+          title: Route Destination ID
+          type: integer
+          description: Route Destination ID.
+        upload_id:
+          title: Upload ID
+          type: string
+          description: The randomly generated unique ID of the file attached to this note (if any).
+        ts_added:
+          title: Unix timestamp
+          type: integer
+          description: The Unix timestamp of the moment this note was added.
+        lat:
+          title: Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude
+        lng:
+          title: Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude
+        activity_type:
+          title: Activity Type
+          type: string
+          description: The type of the activity that occured at the address.
+          enum:
+          - pickup
+          - dropoff
+          - noanswer
+          - notfound
+          - notpaid
+          - paid
+          - wrongdelivery
+          - wrongaddressrecipient
+          - notpresent
+          - service_rendered
+          - parts_missing
+          - follow_up
+          - left_information
+          - spoke_with_decision_maker
+          - spoke_with_decision_influencer
+          - competitive_account
+          - scheduled_follow_up_meeting
+          - scheduled_lunch
+          - scheduled_product_demo
+          - scheduled_clinical_demo
+          - no_opportunity
+          - other
+        contents:
+          title: Contents
+          type: string
+          description: Contents of the note
+        upload_type:
+          title: Upload Type
+          type: string
+          description: The type of file included in the note.
+          nullable: true
+          enum:
+          - CSV_FILE
+          - XLS_FILE
+          - DRIVER_IMG
+          - VEHICLE_IMG
+          - ADDRESS_IMG
+          - MEMBER_IMG
+          - ESIGNATURE_IMG
+          - OPTIMIZATION_SCANS
+        upload_url:
+          title: Upload url
+          type: string
+          description: The direct CDN URL of the attachment uploaded with a note.
+          nullable: true
+        upload_extension:
+          title: Upload Extension
+          type: string
+          description: The extension of the attachment (`pdf`, `csv` etc).
+          nullable: true
+        device_type:
+          title: Device Type
+          type: string
+          description: |
+            The type of the device this note was created with.  
+            Can be `web`, `iphone`, `ipad`, `android phone`, `android tablet`, etc.
+        custom_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/note_custom_type'
+    note_custom_type:
+      title: Note Custom Type
+      type: object
+      properties:
+        note_custom_entry_id:
+          title: Note Custom Entry ID
+          type: string
+          description: Note custom entry ID.
+        note_id:
+          title: Note ID
+          type: string
+          description: Note ID.
+        note_custom_type_id:
+          title: Note Custom Type ID
+          type: integer
+          description: Note custom type ID.
+        note_custom_value:
+          title: Note Custom Value
+          type: string
+          description: The value of a note custom type.
+        note_custom_type:
+          title: Note Custom Type
+          type: string
+          description: Note custom type
+      description: The included part of the property of the route destination response <notes>.
+    DataObjectRoute:
+      title: 'Data Object: Route'
+      required:
+      - member_id
+      - route_id
+      type: object
+      properties:
+        route_id:
+          title: Route ID
+          type: string
+          description: Unique ID of the route.
+        member_id:
+          title: Member ID
+          type: string
+          description: ID of the user assigned to the route.
+          nullable: true
+        member_email:
+          title: Member Email
+          type: string
+          description: User email.
+          format: email
+          nullable: true
+        member_picture:
+          title: Member Picture
+          type: string
+          description: URL of the user's picture.
+          nullable: true
+        member_tracking_subheadline:
+          title: Member's Subheadline in Tracking 
+          type: string
+          description: A subheadline to a nember's name; displayed in Tracking. Can contain personal info, interests, etc.
+          nullable: true
+        approved_for_execution:
+          title: Approved For Execution
+          type: boolean
+          description: If `true`, this route was checked and approved for execution by an appropriate person.
+        vehicle_alias:
+          title: Vehicle Alias
+          type: string
+          description: Alias (name) of the vehicle associated with this route.
+          nullable: true
+        driver_alias:
+          title: Driver Alias
+          type: string
+          description: Name of the driver associated with this route.
+          nullable: true
+        route_cost:
+          title: Route Cost
+          type: number
+          description: Route cost.
+          nullable: true
+        route_revenue:
+          title: Route Revenue
+          type: number
+          description: Route revenue.
+          nullable: true
+        net_revenue_per_distance_unit:
+          title: Net Revenue per Distance Unit
+          type: number
+          description: Calculated by substracting Cost from Revenue, then dividing by Distance units.
+          nullable: true
+        created_timestamp:
+          title: Created Timestamp
+          type: integer
+          description: Unix timestamp of the moment this route was created.
+          nullable: true
+        mpg:
+          title: Miles per Gallon
+          type: string
+          description: Miles per gallon (used to compute fuel consumption).
+          nullable: true
+        trip_distance:
+          title: Trip Distance
+          type: number
+          description: Route length in units defined by the `distance_unit` parameter.
+          nullable: true
+        gas_price:
+          title: Gas Price
+          type: number
+          description: Price of gas (used to compute route costs).
+          nullable: true
+        route_duration_sec:
+          title: Route Duration (sec)
+          type: integer
+          description: Estimated drive time of route (Seconds).
+          nullable: true
+    Links:
+      title: Links
+      type: object
+      properties:
+        route:
+          title: GET Route
+          type: string
+          description: URL of the GET request for the current route.
+        view:
+          title: View Optimization
+          type: string
+          description: URL of the GET request for the optimization problem.
+        optimization_problem_id:
+          title: Optimization Problem (id)
+          type: string
+          description: URL of the GET request for `optimization_problem_id` of the current route.
+    inline_response_200:
+      oneOf:
+      - $ref: '#/components/schemas/ResponseOptimization'
+      - $ref: '#/components/schemas/ResponseOptimizations'
+    RequestAddresses_inner:
+      type: object
+      properties:
+        address:
+          type: string
+        alias:
+          type: string
+          description: Address alias.
+        curbside_lat:
+          type: number
+          description: Curbside latitude.
+          maximum: 90
+          minimum: -90
+        curbside_lng:
+          type: number
+          maximum: 180
+          minimum: -180
+          description: Curbside longitude.
+        is_depot:
+          type: boolean
+          description: If `true`, this address is a depot.
+        lat:
+          type: number
+          maximum: 90
+          minimum: -90
+          description: Latitude.
+        lng:
+          type: number
+          maximum: 180
+          minimum: -180
+          description: Longitude.
+        order_id:
+          type: integer
+          description: Parent order ID.
+        phone:
+          type: string
+          description: Customer Phone.
+        priority:
+          title: Priority
+          type: integer
+          description: |
+            Priority of this address.
+            0 is the highest priority;  
+            N priority is higher than n + 1.
+        sequence_no:
+          type: integer
+          description: The number of this address in a route.
+    AdvancedConstraint_depot_address_source:
+      title: Source of the Depot Address
+      type: object
+      properties:
+        source_id:
+          type: integer
+          description: Source ID
+        source_type:
+          type: string
+          description: Source type (e.g. input_addresses)
+    AdvancedConstraint_depot_address:
+      title: Depot Address
+      type: object
+      properties:
+        source:
+          $ref: '#/components/schemas/AdvancedConstraint_depot_address_source'
+    OverrideAddresses:
+      title: Override Addresses
+      description: Use this to override address info with the data inside of this object.
+      type: object
+      properties:
+        time:
+          title: Time
+          type: integer
+          description: The service time for an address.
+        address_stop_type:
+          title: AddressStopType
+          type: string
+          description: The type of stop this adress is. Can be DELIVERY, PICKUP, BREAK, MEETUP, SERVICE, VISIT, or DRIVEBY.
+          enum:
+          - DELIVERY
+          - PICKUP
+          - BREAK
+          - MEETUP
+          - SERVICE
+          - VISIT
+          - DRIVEBY
+        group:
+          title: Group
+          type: string
+          description: The group this address belongs to.
+    Slowdowns:
+      title: Slowdowns
+      type: object
+      properties:
+        service_time:
+          title: Service Time
+          type: integer
+          description: Service time slowdowon in percentage points. Currently this value will be processed and transferred to the `route_service_time_multiplier` parameter.
+        travel_time:
+          title: Travel Time
+          type: integer
+          description: Travel time slowdowon in percentage points. Currently this value will be processed and transferred to the `route_time_multiplier` parameter.
+    AdvancedConstraints:
+      title: Advanced Constraints
+      type: object
+      properties:
+        max_cargo_volume:
+          title: Maximum Cargo Volume
+          type: number
+          description: Maximum cargo volume per route.
+        max_capacity:
+          title: Maximum Vehicle Capacity
+          type: integer
+          description: How many total cargo units (boxes, crates, etc.) can be transported per route.
+        members_count:
+          title: Members Count
+          type: integer
+          description: Legacy feature which permits a user to request an example number of optimized routes.
+        available_time_windows:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+        tags:
+          title: Tags
+          type: array
+          description: |
+            The driver tags specified in a team member's custom data field.  
+            ((e.g.  
+            `driver skills`: [  
+              `Class A CDL`,  
+              `Class B CDL`,  
+              `Forklift`,  
+              `Skid Steer Loader`,  
+              `Independent Contractor`])
+          items:
+            type: string
+        route4me_members_id:
+          type: array
+          items:
+            type: integer
+          description: An array of the available member (driver) IDs.
+    ServiceTimeRules:
+      title: Service Time Rules
+      description: Contains the parameters controlling how the system treats service times of bundled addresses.
+      type: object
+      properties:
+        first_item_mode:
+          title: First Item Mode
+          type: integer
+          description: |
+            Defines whether the system will modify the service time of the first address in a bundle. Useful in situations when, for example, a team member has to deliver multiple packages in one building and will unload them all at once and then go around the building door to door.
+
+            |Value|Description|
+            |-|-|
+            |1|Keep original|
+            |2|Custom time|
+          enum:
+          - 1
+          - 2
+        first_item_mode_params:
+          title: First Item Mode Parametrs
+          type: array
+          description: If `first_item_mode` = 2, this parameter contains the custom time for the first of the bundled addresses in the EPOCH format and is required.
+          items:
+            type: integer
+        additional_items_mode:
+          title: Additional Items Mode
+          type: integer
+          description: |
+            Defines whether the system will modify the service times of the second and the following addresses in a bundle.
+
+            |Value|Description|
+            |-|-|
+            |1|Preserve original address service time|
+            |2|Add custom time (1 param)|
+            |3|Don't add the service times to the total time. Useful for situations when, for example, there are multiple deliveries to be made in one building, but they are all to be delivered to the reception desk.|
+          enum:
+          - 1
+          - 2
+          - 3
+        additional_items_mode_params:
+          title: Additional Items Mode Parameters
+          type: array
+          description: If `additional_items_mode` = 2, this parameter contains the list of custom times in the EPOCH format and is required. The times contained here will be added to the corresponding times of the bundled addresses.
+          items:
+            type: integer
+    BundleItems:
+      title: Bundle Items
+      type: object
+      properties:
+        cube:
+          title: Cube
+          type: number
+          description: Total cubic volume of the bundled addresses.
+        revenue:
+          title: Revenue
+          type: number
+          description: Total revenue of the bundled addresses.
+        pieces:
+          title: Pieces
+          type: integer
+          description: Total pieces count of the bundled addresses.
+        weight:
+          title: Weight
+          type: number
+          description: Total weight of the bundled addresses.
+        cost:
+          title: Cost
+          type: number
+          description: Total cost of the bundled addresses.
+        service_time:
+          title: Service Time
+          type: integer
+          description: Total service time of the bundled addresses.
+        time_window_start:
+          title: Time Window Start
+          type: integer
+          description: Time window start for the bundled addresses.
+        time_window_end:
+          title: Time Window End
+          type: integer
+          description: Time window end for the bundled addresses.
+        custom_data:
+          title: Custom Data
+          type: array
+          description: Custom data.
+          items:
+            type: string
+        addresses_id:
+          title: Addresses IDs
+          type: array
+          description: IDs of the addresses in the bundle.
+          items:
+            type: integer
+      description: Bundle totals.
+      readOnly: true
+    Address_order_inventory:
+      type: object
+      properties:
+        inventory_id:
+          title: Inventory ID
+          type: integer
+          description: Unique inventory ID.
+        order_id:
+          title: Order ID
+          type: integer
+          description: Unique order ID.
+        name:
+          title: Name
+          type: string
+          description: Order inventory name.
+        quantity:
+          title: Quantity
+          type: integer
+          description: An order inventory quantity.
+        total_weight:
+          title: Total Weight
+          type: number
+          description: Total weight of the inventory.
+        total_volume:
+          title: Total Volume
+          type: number
+          description: Total volume of the inventory.
+        total_cost:
+          title: Total Cost
+          type: number
+          description: Total cost of the inventory.
+        total_price:
+          title: Total Price
+          type: number
+          description: Total price of the inventory.
+        created_at:
+          title: Created At
+          type: string
+          description: Timestamp for the moment the inventory was created.
+        updated_at:
+          title: Updated At
+          type: string
+          description: Timestamp for the moment the inventory was last updated.
+    Address_path_to_next:
+      type: object
+      properties:
+        lat:
+          title: Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude of a turn in a `path_to_next` array.
+        lng:
+          title: Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude of a turn in a `path_to_next` array.
+    Manifest:
+      title: Manifest
+      type: object
+      properties:
+        estimated_wait_time_before_tw_open:
+          title: Estimated Wait Time Before TW Open
+          type: integer
+          description: Estimated wait time before TW open.
+        running_service_time:
+          title: Running Service Time
+          type: integer
+          description: How much time is to be spent on service from the start in seconds.
+        running_travel_time:
+          title: Running Travel Time
+          type: integer
+          description: How much time is spent driving from the start in seconds.
+        running_wait_time:
+          title: Running Wait Time
+          type: integer
+          description: Running Wait Time.
+        running_distance:
+          title: Running Distance
+          type: number
+          description: Distance traversed before reaching this address.
+        udu_running_distance:
+          title: UDU Running Distance
+          type: number
+          description: UDU distance traversed before reaching this address.
+        fuel_from_start:
+          title: Fuel From Start
+          type: number
+          description: Fuel From Start.
+        fuel_cost_from_start:
+          title: Fuel Cost From Start
+          type: number
+          description: Fuel Cost From Start.
+        projected_arrival_time_ts:
+          title: Projected Arrival Time ts
+          type: integer
+          description: Projected arrival time UTC unixtime.
+        projected_departure_time_ts:
+          title: Projected Departure Time ts
+          type: integer
+          description: Estimated departure time UTC unixtime.
+        actual_arrival_time_ts:
+          title: Actual Arrival Time ts
+          type: integer
+          description: |
+            Time when the address was marked as visited UTC unixtime.  
+            Usually equal to `timestamp_last_visited`.
+          nullable: true
+        actual_departure_time_ts:
+          title: Actual Departure Time ts
+          type: integer
+          description: |
+            Time when the address was mared as departed UTC.  
+            Usually equal to `timestamp_last_departed`.
+          nullable: true
+        estimated_arrival_time_ts:
+          title: Estimated Arrival Time ts
+          type: integer
+          description: Estimated arrival time based on the current route progress, i.e. based on the last known `actual_arrival_time`.
+        estimated_departure_time_ts:
+          title: Estimated Departure Time ts
+          type: integer
+          description: Estimated departure time based on the current route progress.
+        scheduled_arrival_time_ts:
+          title: Scheduled Arrival Time ts
+          type: integer
+          description: Scheduled arrival time of a vehicle to this destination.
+        scheduled_departure_time_ts:
+          title: Scheduled Departure Time ts
+          type: integer
+          description: Scheduled departure time of a vehicle from this destination.
+        time_impact:
+          title: Time Impact
+          type: integer
+          description: This is the difference between the originally projected arrival time and Actual Arrival Time.
+          nullable: true
+        arrival_on_time:
+          title: Arrival On Time
+          type: boolean
+          description: If true, a vehicle arrived on time at the address.
+        arrival_deviation_seconds:
+          title: Arrival Deviation Seconds
+          type: integer
+          description: Arrival deviation in seconds.
+        departure_on_time:
+          title: Departure On Time
+          type: boolean
+          description: If true, a vehicle departed on time from the address.
+        departure_deviation_seconds:
+          title: Departure Deviation Seconds
+          type: integer
+          description: Departure deviation in seconds.
+        remaining_weight:
+          title: Remaining Weight
+          type: number
+          description: Remaining weight.
+        remaining_cube:
+          title: Remaining Cube
+          type: number
+          description: Remaining cube (volume).
+        remaining_pieces:
+          title: Remaining Pieces
+          type: integer
+          description: Remaining pieces.
+        remaining_revenue:
+          title: Remaining Revenue
+          type: number
+          description: Remaining revenue.
+      description: The manifest contains values derived from other values.
+    geocoding_bbox:
+      type: object
+      properties:
+        lat:
+          title: Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude
+        lng:
+          description: Longitude
+          title: Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+    geocoding_curbside_coordinates:
+      type: object
+      properties:
+        lat:
+          title: Latitude
+          maximum: 90
+          minimum: -90
+          type: number
+          description: Latitude
+        lng:
+          title: Longitude
+          maximum: 180
+          minimum: -180
+          type: number
+          description: Longitude
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error404'
+    InvalidValue:
+      description: Validation Exception.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error406'
+  parameters:
+    idParam:
+      name: optimization_problem_id
+      in: query
+      description: An optimization's unique ID.
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+    idNotRequiredParam:
+      name: optimization_problem_id
+      in: query
+      description: A optimization ID.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    stateParam:
+      name: state
+      in: query
+      description: The state of the optimization.
+      required: false
+      style: form
+      explode: true
+      schema:
+        title: State
+        type: integer
+        description: |
+          An optimization problem can be at one state at any given time (  
+          New = 0,  
+          Initial = 1,  
+          MatrixProcessing = 2,  
+          Optimizing = 3,  
+          Optimized = 4,  
+          Error = 5,  
+          ComputingDirections = 6)
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+    limitParam:
+      name: limit
+      in: query
+      description: Limit of the queried records number.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: integer
+    offsetParam:
+      name: offset
+      in: query
+      description: Offset from the beginning of the queried records.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: integer
+    startDateParam:
+      name: start_date
+      in: query
+      description: Start of the time range.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    endDateParam:
+      name: end_date
+      in: query
+      description: End of the time range.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+    redirectParam:
+      name: redirect
+      in: query
+      description: 1 - redirect, 0 - not redirect (default).
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: integer
+  requestBodies:
+    Data:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              addresses:
+                description: The collection of addressses for the optimization
+                $ref: '#/components/schemas/RequestAddresses'
+              parameters:
+                description: Other optimization parameters
+                $ref: '#/components/schemas/RequestParameters'
+    Remove:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              optimization_problem_ids:
+                type: array
+                description: Array containing the IDs of the optimizations you wish to delete.
+                items:
+                  type: string
+  securitySchemes:
+    APIKeyQueryParam:
+      type: apiKey
+      name: api_key
+      in: query
